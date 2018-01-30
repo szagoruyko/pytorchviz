@@ -6,7 +6,7 @@ A small package to create visualizations of PyTorch execution graphs and traces.
 ## Installation
 
 ```
-pip intall git+https://github.com/szagoruyko/pytorchviz
+pip install git+https://github.com/szagoruyko/pytorchviz
 ```
 
 
