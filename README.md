@@ -5,6 +5,14 @@ A small package to create visualizations of PyTorch execution graphs and traces.
 
 ## Installation
 
+Install graphviz, e.g.:
+
+```
+brew install graphviz
+```
+
+Install the package itself:
+
 ```
 pip install git+https://github.com/szagoruyko/pytorchviz
 ```
