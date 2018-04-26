@@ -56,6 +56,9 @@ def make_dot(var, params=None):
                     dot.edge(str(id(t)), str(id(var)))
                     add_nodes(t)
     add_nodes(var.grad_fn)
+
+    resize_graph(dot)
+
     return dot
 
 
@@ -125,4 +128,20 @@ def make_dot_from_trace(trace):
         if node.inputs:
             for inp in node.inputs:
                 dot.edge(inp, node.name)
+
+    resize_graph(dot)
+
     return dot
+
+
+def resize_graph(dot, size_per_element=0.15, min_size=12):
+    """Resize the graph according to how much content it contains.
+
+    Modify the graph in place.
+    """
+    # Get the approximate number of nodes and edges
+    num_rows = len(dot.body)
+    content_size = num_rows * size_per_element
+    size = max(min_size, content_size)
+    size_str = str(size) + "," + str(size)
+    dot.graph_attr.update(size=size_str)
