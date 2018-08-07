@@ -37,6 +37,8 @@ def make_dot(var, params=None):
     def add_nodes(var):
         if var not in seen:
             if torch.is_tensor(var):
+                # note: this used to show .saved_tensors in pytorch0.2, but stopped
+                # working as it was moved to ATen and Variable-Tensor merged
                 dot.node(str(id(var)), size_to_str(var.size()), fillcolor='orange')
             elif hasattr(var, 'variable'):
                 u = var.variable
