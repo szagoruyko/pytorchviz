@@ -57,7 +57,13 @@ def make_dot(var, params=None):
                 for t in var.saved_tensors:
                     dot.edge(str(id(t)), str(id(var)))
                     add_nodes(t)
-    add_nodes(var.grad_fn)
+
+    # handle multiple outputs
+    if isinstance(var, tuple):
+        for v in var:
+            add_nodes(v.grad_fn)
+    else:
+        add_nodes(var.grad_fn)
 
     resize_graph(dot)
 
