@@ -2,7 +2,7 @@ from graphviz import Digraph
 import torch
 from torch.autograd import Variable
 from collections import namedtuple
-
+from distutils.version import LooseVersion
 
 Node = namedtuple('Node', ('name', 'inputs', 'attr', 'op'))
 
@@ -112,7 +112,13 @@ def make_dot_from_trace(trace):
     >>> trace, = torch.jit.trace(model, args=(x,))
     >>> dot = make_dot_from_trace(trace)
     """
-    torch.onnx._optimize_trace(trace, False)
+    # from tensorboardX
+    if LooseVersion(torch.__version__) >= LooseVersion("0.4.1"):
+        torch.onnx._optimize_trace(trace, torch._C._onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK)
+    elif LooseVersion(torch.__version__) >= LooseVersion("0.4"):
+        torch.onnx._optimize_trace(trace, False)
+    else:
+        torch.onnx._optimize_trace(trace)
     graph = trace.graph()
     list_of_nodes = parse(graph)
 
