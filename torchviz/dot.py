@@ -1,8 +1,8 @@
+from collections import namedtuple
+from distutils.version import LooseVersion
 from graphviz import Digraph
 import torch
 from torch.autograd import Variable
-from collections import namedtuple
-from distutils.version import LooseVersion
 
 Node = namedtuple('Node', ('name', 'inputs', 'attr', 'op'))
 
@@ -34,6 +34,8 @@ def make_dot(var, params=None):
     def size_to_str(size):
         return '(' + (', ').join(['%d' % v for v in size]) + ')'
 
+    output_nodes = (var.grad_fn,) if not isinstance(var, tuple) else tuple(v.grad_fn for v in var)
+
     def add_nodes(var):
         if var not in seen:
             if torch.is_tensor(var):
@@ -45,6 +47,8 @@ def make_dot(var, params=None):
                 name = param_map[id(u)] if params is not None else ''
                 node_name = '%s\n %s' % (name, size_to_str(u.size()))
                 dot.node(str(id(var)), node_name, fillcolor='lightblue')
+            elif var in output_nodes:
+                dot.node(str(id(var)), str(type(var).__name__), fillcolor='darkolivegreen1')
             else:
                 dot.node(str(id(var)), str(type(var).__name__))
             seen.add(var)
