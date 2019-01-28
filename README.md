@@ -14,7 +14,7 @@ brew install graphviz
 Install the package itself:
 
 ```
-pip install git+https://github.com/szagoruyko/pytorchviz
+pip install torchviz
 ```
 
 
