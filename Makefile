@@ -9,3 +9,7 @@ upload: dist
 .PHONY: clean
 clean:
 	@rm -rf build dist *.egg-info
+
+.PHONY: test
+test:
+	PYTHONPATH=. python test/test.py
