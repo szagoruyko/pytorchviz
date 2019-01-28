@@ -10,12 +10,12 @@ long_description = ""
 
 setup_info = dict(
     # Metadata
-    name='pytorchviz',
+    name='torchviz',
     version=VERSION,
     author='Sergey Zagoruyko',
     author_email='sergey.zagoruyko@enpc.fr',
     url='https://github.com/pytorch/pytorchviz',
-    description='a small package to create visualizations of PyTorch execution graphs',
+    description='A small package to create visualizations of PyTorch execution graphs',
     long_description=long_description,
     license='BSD',
 
