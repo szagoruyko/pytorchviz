@@ -3,7 +3,7 @@ dist:
 	python setup.py sdist
 
 .PHONY: upload
-upload:
+upload: dist
 	twine upload dist/*
 
 .PHONY: clean
