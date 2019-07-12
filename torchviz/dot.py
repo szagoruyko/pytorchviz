@@ -7,17 +7,18 @@ from torch.autograd import Variable
 Node = namedtuple('Node', ('name', 'inputs', 'attr', 'op'))
 
 
-def make_dot(var, params=None):
+def make_dot(model, x):
     """ Produces Graphviz representation of PyTorch autograd graph.
 
     Blue nodes are the Variables that require grad, orange are Tensors
     saved for backward in torch.autograd.Function
 
     Args:
-        var: output Variable
-        params: dict of (name, Variable) to add names to node that
-            require grad (TODO: make optional)
+        model: torch nn model
+        x: input tensor
     """
+    var = model(x)
+    params = dict(model.named_parameters())
     if params is not None:
         assert all(isinstance(p, Variable) for p in params.values())
         param_map = {id(v): k for k, v in params.items()}
@@ -36,7 +37,7 @@ def make_dot(var, params=None):
 
     output_nodes = (var.grad_fn,) if not isinstance(var, tuple) else tuple(v.grad_fn for v in var)
 
-    def add_nodes(var):
+    def add_nodes(var, grad=torch.zeros_like(var)):
         if var not in seen:
             if torch.is_tensor(var):
                 # note: this used to show .saved_tensors in pytorch0.2, but stopped
@@ -47,20 +48,30 @@ def make_dot(var, params=None):
                 name = param_map[id(u)] if params is not None else ''
                 node_name = '%s\n %s' % (name, size_to_str(u.size()))
                 dot.node(str(id(var)), node_name, fillcolor='lightblue')
-            elif var in output_nodes:
-                dot.node(str(id(var)), str(type(var).__name__), fillcolor='darkolivegreen1')
             else:
-                dot.node(str(id(var)), str(type(var).__name__))
+                name = str(type(var).__name__).replace('Backward', '')
+                node_name = '%s\n %s' % (name, size_to_str(grad.size()))
+                if var in output_nodes:
+                    dot.node(str(id(var)), node_name, fillcolor='darkolivegreen1')
+                else:
+                    dot.node(str(id(var)), node_name)
+
             seen.add(var)
             if hasattr(var, 'next_functions'):
-                for u in var.next_functions:
+                grads = var(grad)
+                grads = grads if isinstance(grads, tuple) else [grads]
+                for i, (u, grad) in enumerate(zip(var.next_functions, grads)):
                     if u[0] is not None:
                         dot.edge(str(id(u[0])), str(id(var)))
-                        add_nodes(u[0])
+                        add_nodes(u[0], grad)
+                    elif i == 0:
+                        dot.edge(str(id(u[0])), str(id(var)))
+                        node_name = 'input\n %s' % size_to_str(x.size())
+                        dot.node(str(id(u[0])), node_name, fillcolor='orange')
             if hasattr(var, 'saved_tensors'):
                 for t in var.saved_tensors:
                     dot.edge(str(id(t)), str(id(var)))
-                    add_nodes(t)
+                    add_nodes(t, grad)
 
     # handle multiple outputs
     if isinstance(var, tuple):
