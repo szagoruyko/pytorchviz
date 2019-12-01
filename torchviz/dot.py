@@ -82,16 +82,19 @@ def replace(name, scope):
 
 def parse(graph):
     scope = {}
+
     for n in graph.nodes():
         inputs = [i.uniqueName() for i in n.inputs()]
-        for i in range(1, len(inputs)):
-            scope[inputs[i]] = n.scopeName()
-
+        for i in range(0, len(inputs)):
+            if not inputs[i] in scope:
+                scope[inputs[i]] = n.scopeName()
+        #print(inputs[:])
         uname = next(n.outputs()).uniqueName()
         assert n.scopeName() != '', '{} has empty scope name'.format(n)
         scope[uname] = n.scopeName()
     scope['0'] = 'input'
 
+    #print(scope)
     nodes = []
     for n in graph.nodes():
         attrs = {k: n[k] for k in n.attributeNames()}
@@ -111,7 +114,7 @@ def parse(graph):
                              'op': 'Parameter',
                              'inputs': [],
                              'attr': str(n.type())}))
-
+    
     return nodes
 
 
