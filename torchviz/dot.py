@@ -85,6 +85,7 @@ def parse(graph):
 
     for n in graph.nodes():
         inputs = [i.debugName() for i in n.inputs()]
+        # TODO: changing the 1 to 0 changes the scope on the node viz
         for i in range(0, len(inputs)):
             if not inputs[i] in scope:
                 scope[inputs[i]] = n.scopeName()

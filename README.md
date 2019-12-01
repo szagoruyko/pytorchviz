@@ -22,7 +22,7 @@ pip install torchviz
 
 <img width="891" alt="screen shot 2018-01-30 at 16 13 01" src="https://user-images.githubusercontent.com/4953728/35574234-8780297e-05d9-11e8-8e80-f4009297cefd.png">
 
-There are two functions, `make_dot` to make graphs from any PyTorch functions (requires that at least one input Variable requires_grad), and `make_dot_from_trace` that uses outputs of `torch.jit.trace` (does not always work). See [examples.ipynb](examples.ipynb).
+There are two functions, `make_dot` to make graphs from any PyTorch functions (requires that at least one input Variable requires_grad), and `trace_and_dot` that uses outputs of `torch.jit.trace` (does not always work). See [examples.ipynb](examples.ipynb).
 
 ## Acknowledgements
 
