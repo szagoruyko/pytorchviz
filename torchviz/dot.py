@@ -84,12 +84,12 @@ def parse(graph):
     scope = {}
 
     for n in graph.nodes():
-        inputs = [i.uniqueName() for i in n.inputs()]
+        inputs = [i.debugName() for i in n.inputs()]
         for i in range(0, len(inputs)):
             if not inputs[i] in scope:
                 scope[inputs[i]] = n.scopeName()
         #print(inputs[:])
-        uname = next(n.outputs()).uniqueName()
+        uname = next(n.outputs()).debugName()
         assert n.scopeName() != '', '{} has empty scope name'.format(n)
         scope[uname] = n.scopeName()
     scope['0'] = 'input'
@@ -99,15 +99,15 @@ def parse(graph):
     for n in graph.nodes():
         attrs = {k: n[k] for k in n.attributeNames()}
         attrs = str(attrs).replace("'", ' ')
-        inputs = [replace(i.uniqueName(), scope) for i in n.inputs()]
-        uname = next(n.outputs()).uniqueName()
+        inputs = [replace(i.debugName(), scope) for i in n.inputs()]
+        uname = next(n.outputs()).debugName()
         nodes.append(Node(**{'name': replace(uname, scope),
                              'op': n.kind(),
                              'inputs': inputs,
                              'attr': attrs}))
 
     for n in graph.inputs():
-        uname = n.uniqueName()
+        uname = n.debugName()
         if uname not in scope.keys():
             scope[uname] = 'unused'
         nodes.append(Node(**{'name': replace(uname, scope),
