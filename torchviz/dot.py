@@ -9,8 +9,7 @@ Node = namedtuple('Node', ('name', 'inputs', 'attr', 'op'))
 # Saved attrs for grad_fn (incl. saved variables) begin with `._saved_*`
 SAVED_PREFIX = "_saved_"
 
-
-def get_fn_name(fn, show_attrs):
+def get_fn_name(fn, show_attrs, max_attr_chars):
     name = str(type(fn).__name__)
     if not show_attrs:
         return name
@@ -19,34 +18,38 @@ def get_fn_name(fn, show_attrs):
         if not attr.startswith(SAVED_PREFIX):
             continue
         val = getattr(fn, attr)
+        attr = attr[len(SAVED_PREFIX):]
         if torch.is_tensor(val):
-            attrs[attr] = "[saved variable]"
+            attrs[attr] = "[saved tensor]"
         elif isinstance(val, tuple) and any(torch.is_tensor(t) for t in val):
-            attrs[attr] = "[saved variables]"
+            attrs[attr] = "[saved tensors]"
         else:
-            attrs[attr] = str(getattr(fn, attr))
+            attrs[attr] = str(val)
     if not attrs:
         return name
-    col1width = max(len(str(k[len(SAVED_PREFIX):])) for k in attrs.keys())
-    col2width = max(len(str(v)) for v in attrs.values())
+    col1width = max(len(k) for k in attrs.keys())
+    col2width = min(max(len(str(v)) for v in attrs.values()), max_attr_chars)
     sep = "-" * max(col1width + col2width + 2, len(name))
     attrstr = '%-' + str(col1width) + 's: %' + str(col2width)+ 's'
-    params = '\n'.join(attrstr % (k[len(SAVED_PREFIX):], str(v)) for (k, v) in attrs.items())
+    params = '\n'.join(attrstr % (k, str(v)) for (k, v) in attrs.items())
     return name + '\n' + sep + '\n' + params
 
 
-def make_dot(var, params=None, show_attrs=False, show_saved=False):
+def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_chars=50):
     """ Produces Graphviz representation of PyTorch autograd graph.
 
-    Blue nodes are the Variables that require grad, orange are Tensors
+    Blue nodes are the tensors that require grad, orange nodes are tensors
     saved for backward in torch.autograd.Function. If output is a view,
-    there is a dotted edge between it and its base.
+    there is a dotted edge between it and its base, and its base-tensor is
+    green.
+
     Args:
-        var: output Variable
-        params: dict of (name, Variable) to add names to node that
-            require grad (TODO: make optional)
+        var: output tensor
+        params: dict of (name, tensor) to add names to node that
+            require grad
         show_attrs: whether to display the non-tensor attrs of the backward nodes
-        show_saved: whether to display saved variable nodes
+        show_saved: whether to display saved tensor nodes
+        max_attr_chars: max number of characters to display for any given attr
     """
     if params is not None:
         assert all(isinstance(p, Variable) for p in params.values())
@@ -68,10 +71,12 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False):
         return '(' + (', ').join(['%d' % v for v in size]) + ')'
 
     def get_var_name(var, name=None):
-        name = param_map[id(var)] if id(var) in param_map else ''
+        if not name:
+            name = param_map[id(var)] if id(var) in param_map else ''
         return '%s\n %s' % (name, size_to_str(var.size()))
 
     def add_nodes(fn):
+        assert not torch.is_tensor(fn)
         if fn in seen:
             return
         seen.add(fn)
@@ -81,15 +86,16 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False):
                 if not attr.startswith(SAVED_PREFIX):
                     continue
                 val = getattr(fn, attr)
+                attr = attr[len(SAVED_PREFIX):]
                 if torch.is_tensor(val):
                     dot.edge(str(id(fn)), str(id(val)))
-                    dot.node(str(id(val)), attr[len(SAVED_PREFIX):], fillcolor='orange')
+                    dot.node(str(id(val)), get_var_name(val, attr), fillcolor='orange')
                 if isinstance(val, tuple):
                     for i, t in enumerate(val):
                         if torch.is_tensor(t):
-                            name = attr[len(SAVED_PREFIX):] + '[%s]' % str(i)
+                            name = attr + '[%s]' % str(i)
                             dot.edge(str(id(fn)), str(id(t)))
-                            dot.node(str(id(t)), name, fillcolor='orange')
+                            dot.node(str(id(t)), get_var_name(i, name), fillcolor='orange')
 
         if hasattr(fn, 'variable'):
             # if grad_accumulator, add the node for `.variable`
@@ -98,7 +104,7 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False):
             dot.edge(str(id(var)), str(id(fn)))
 
         # add the node for this grad_fn
-        dot.node(str(id(fn)), get_fn_name(fn, show_attrs))
+        dot.node(str(id(fn)), get_fn_name(fn, show_attrs, max_attr_chars))
 
         # recurse
         if hasattr(fn, 'next_functions'):
@@ -108,7 +114,8 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False):
                     add_nodes(u[0])
 
         # note: this used to show .saved_tensors in pytorch0.2, but stopped
-        # working as it was moved to ATen and Variable-Tensor merged
+        # working* as it was moved to ATen and Variable-Tensor merged
+        # also note that this still works for custom autograd functions
         if hasattr(fn, 'saved_tensors'):
             for t in fn.saved_tensors:
                 dot.edge(str(id(t)), str(id(fn)))
@@ -118,6 +125,7 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False):
     def add_base_tensor(var, color='green'):
         if var in seen:
             return
+        seen.add(var)
         dot.node(str(id(var)), get_var_name(var), fillcolor=color)
         if (var.grad_fn):
             add_nodes(var.grad_fn)
@@ -125,7 +133,6 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False):
         if var._is_view():
             add_base_tensor(var._base, color='lightgreen')
             dot.edge(str(id(var._base)), str(id(var)), style="dotted")
-        seen.add(var)
 
 
     # handle multiple outputs
