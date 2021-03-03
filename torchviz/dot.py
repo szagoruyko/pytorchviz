@@ -82,10 +82,14 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
         seen.add(fn)
 
         if show_saved:
+            # objects with non-overlapping lifetimes may share the same id, lets keep
+            # all objects alive at the same time so their ids cant clash
+            vals = []
             for attr in dir(fn):
                 if not attr.startswith(SAVED_PREFIX):
                     continue
                 val = getattr(fn, attr)
+                vals.append(val)
                 attr = attr[len(SAVED_PREFIX):]
                 if torch.is_tensor(val):
                     dot.edge(str(id(fn)), str(id(val)))
