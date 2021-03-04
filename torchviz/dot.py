@@ -3,6 +3,7 @@ from distutils.version import LooseVersion
 from graphviz import Digraph
 import torch
 from torch.autograd import Variable
+import warnings
 
 Node = namedtuple('Node', ('name', 'inputs', 'attr', 'op'))
 
@@ -27,30 +28,47 @@ def get_fn_name(fn, show_attrs, max_attr_chars):
             attrs[attr] = str(val)
     if not attrs:
         return name
+    max_attr_chars = max(max_attr_chars, 3)
     col1width = max(len(k) for k in attrs.keys())
     col2width = min(max(len(str(v)) for v in attrs.values()), max_attr_chars)
     sep = "-" * max(col1width + col2width + 2, len(name))
     attrstr = '%-' + str(col1width) + 's: %' + str(col2width)+ 's'
-    params = '\n'.join(attrstr % (k, str(v)) for (k, v) in attrs.items())
+    truncate = lambda s: s[:col2width - 3] + "..." if len(s) > col2width else s
+    params = '\n'.join(attrstr % (k, truncate(str(v))) for (k, v) in attrs.items())
     return name + '\n' + sep + '\n' + params
 
 
 def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_chars=50):
     """ Produces Graphviz representation of PyTorch autograd graph.
 
-    Blue nodes are the tensors that require grad, orange nodes are tensors
-    saved for backward in torch.autograd.Function. If output is a view,
-    there is a dotted edge between it and its base, and its base-tensor is
-    green.
+    If a node represents a backward function, it is gray. Otherwise, the node
+    represents a tensor and is either blue, orange, or green:
+     - Blue: reachable leaf tensors that requires grad (tensors whose `.grad`
+         fields will be populated during `.backward()`)
+     - Orange: saved tensors of custom autograd functions as well as those
+         saved by built-in backward nodes
+     - Green: tensor passed in as outputs
+     - Dark green: if any output is a view, we represent its base tensor with
+         a dark green node.
 
     Args:
         var: output tensor
-        params: dict of (name, tensor) to add names to node that
-            require grad
-        show_attrs: whether to display the non-tensor attrs of the backward nodes
-        show_saved: whether to display saved tensor nodes
-        max_attr_chars: max number of characters to display for any given attr
+        params: dict of (name, tensor) to add names to node that requires grad
+        show_attrs: whether to display non-tensor attributes of backward nodes
+            (Requires PyTorch version >= 1.9)
+        show_saved: whether to display saved tensor nodes that are not by custom
+            autograd functions. Saved tensor nodes for custom functions, if
+            present, are always displayed. (Requires PyTorch version >= 1.9)
+        max_attr_chars: if show_attrs is `True`, sets max number of characters
+            to display for any given attribute.
     """
+    if LooseVersion(torch.__version__) < LooseVersion("1.9") and \
+        (show_attrs or show_saved):
+        warnings.warn(
+            "make_dot: showing grad_fn attributes and saved variables"
+            " requires PyTorch version >= 1.9. (This does NOT apply to"
+            " saved tensors saved by custom autograd functions.)")
+
     if params is not None:
         assert all(isinstance(p, Variable) for p in params.values())
         param_map = {id(v): k for k, v in params.items()}
@@ -82,28 +100,26 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
         seen.add(fn)
 
         if show_saved:
-            # objects with non-overlapping lifetimes may share the same id, lets keep
-            # all objects alive at the same time so their ids cant clash
-            vals = []
             for attr in dir(fn):
                 if not attr.startswith(SAVED_PREFIX):
                     continue
                 val = getattr(fn, attr)
-                vals.append(val)
+                seen.add(val)
                 attr = attr[len(SAVED_PREFIX):]
                 if torch.is_tensor(val):
-                    dot.edge(str(id(fn)), str(id(val)))
+                    dot.edge(str(id(fn)), str(id(val)), dir="none")
                     dot.node(str(id(val)), get_var_name(val, attr), fillcolor='orange')
                 if isinstance(val, tuple):
                     for i, t in enumerate(val):
                         if torch.is_tensor(t):
                             name = attr + '[%s]' % str(i)
-                            dot.edge(str(id(fn)), str(id(t)))
-                            dot.node(str(id(t)), get_var_name(i, name), fillcolor='orange')
+                            dot.edge(str(id(fn)), str(id(t)), dir="none")
+                            dot.node(str(id(t)), get_var_name(t, name), fillcolor='orange')
 
         if hasattr(fn, 'variable'):
             # if grad_accumulator, add the node for `.variable`
             var = fn.variable
+            seen.add(var)
             dot.node(str(id(var)), get_var_name(var), fillcolor='lightblue')
             dot.edge(str(id(var)), str(id(fn)))
 
@@ -126,7 +142,7 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
                 dot.node(str(id(t)), get_var_name(t), fillcolor='orange')
 
 
-    def add_base_tensor(var, color='green'):
+    def add_base_tensor(var, color='darkolivegreen1'):
         if var in seen:
             return
         seen.add(var)
@@ -135,7 +151,7 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
             add_nodes(var.grad_fn)
             dot.edge(str(id(var.grad_fn)), str(id(var)))
         if var._is_view():
-            add_base_tensor(var._base, color='lightgreen')
+            add_base_tensor(var._base, color='darkolivegreen3')
             dot.edge(str(id(var._base)), str(id(var)), style="dotted")
 
 
