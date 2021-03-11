@@ -33,7 +33,7 @@ make_dot(y.mean(), params=dict(model.named_parameters()))
 ```
 ![image](https://user-images.githubusercontent.com/13428986/110844921-ff3f7500-8277-11eb-912e-3ba03623fdf5.png)
 
-Set `show_attrs=True` and `show_saved=True` to see what autograd saves for the backward pass.
+Set `show_attrs=True` and `show_saved=True` to see what autograd saves for the backward pass. (Note that this is only available for pytorch >= 1.9.)
 ```
 model = nn.Sequential()
 model.add_module('W0', nn.Linear(8, 16))
