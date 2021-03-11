@@ -19,8 +19,33 @@ pip install torchviz
 
 
 ## Usage
+Example usage of `make_dot`:
+```
+model = nn.Sequential()
+model.add_module('W0', nn.Linear(8, 16))
+model.add_module('tanh', nn.Tanh())
+model.add_module('W1', nn.Linear(16, 1))
 
-<img width="891" alt="screen shot 2018-01-30 at 16 13 01" src="https://user-images.githubusercontent.com/4953728/35574234-8780297e-05d9-11e8-8e80-f4009297cefd.png">
+x = torch.randn(1, 8)
+y = model(x)
+
+make_dot(y.mean(), params=dict(model.named_parameters()))
+```
+![image](https://user-images.githubusercontent.com/13428986/110844921-ff3f7500-8277-11eb-912e-3ba03623fdf5.png)
+
+Set `show_attrs=True` and `show_saved=True` to see what autograd saves for the backward pass.
+```
+model = nn.Sequential()
+model.add_module('W0', nn.Linear(8, 16))
+model.add_module('tanh', nn.Tanh())
+model.add_module('W1', nn.Linear(16, 1))
+
+x = torch.randn(1, 8)
+y = model(x)
+
+make_dot(y.mean(), params=dict(model.named_parameters()), show_attrs=True, show_saved=True)
+```
+![image](https://user-images.githubusercontent.com/13428986/110845186-4ded0f00-8278-11eb-88d2-cc33413bb261.png)
 
 There are two functions, `make_dot` to make graphs from any PyTorch functions (requires that at least one input Variable requires_grad), and `make_dot_from_trace` that uses outputs of `torch.jit.trace` (does not always work). See [examples.ipynb](examples.ipynb).
 
