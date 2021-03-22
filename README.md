@@ -3,6 +3,8 @@ PyTorchViz
 
 A small package to create visualizations of PyTorch execution graphs and traces.
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/szagoruyko/pytorchviz/blob/master/examples.ipynb)
+
 ## Installation
 
 Install graphviz, e.g.:
