@@ -49,8 +49,6 @@ make_dot(y.mean(), params=dict(model.named_parameters()), show_attrs=True, show_
 ```
 ![image](https://user-images.githubusercontent.com/13428986/110845186-4ded0f00-8278-11eb-88d2-cc33413bb261.png)
 
-There are two functions, `make_dot` to make graphs from any PyTorch functions (requires that at least one input Variable requires_grad), and `make_dot_from_trace` that uses outputs of `torch.jit.trace` (does not always work). See [examples.ipynb](examples.ipynb).
-
 ## Acknowledgements
 
 The script was moved from [functional-zoo](https://github.com/szagoruyko/functional-zoo) where it was created with the help of Adam Paszke, Soumith Chintala, Anton Osokin, and uses bits from [tensorboard-pytorch](https://github.com/lanpa/tensorboard-pytorch).
