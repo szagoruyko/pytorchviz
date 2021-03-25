@@ -20,12 +20,6 @@ class TestTorchviz(unittest.TestCase):
         y = model(x)
         dot = make_dot(y.mean(), params=dict(model.named_parameters()))
 
-    def test_mlp_make_dot_from_trace(self):
-        model, x = make_mlp_and_input()
-        with torch.onnx.set_training(model, False):
-            trace, _ = torch.jit.get_trace_graph(model, args=(x,))
-        dot = make_dot_from_trace(trace)
-
     def test_double_backprop_make_dot(self):
         model, x = make_mlp_and_input()
         x.requires_grad = True
