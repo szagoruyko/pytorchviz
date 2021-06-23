@@ -23,6 +23,7 @@ pip install torchviz
 ## Usage
 Example usage of `make_dot`:
 ```
+from torchviz import make_dot
 model = nn.Sequential()
 model.add_module('W0', nn.Linear(8, 16))
 model.add_module('tanh', nn.Tanh())
