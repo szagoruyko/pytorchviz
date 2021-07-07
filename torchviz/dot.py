@@ -91,7 +91,7 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
     def get_var_name(var, name=None):
         if not name:
             name = param_map[id(var)] if id(var) in param_map else ''
-        return '%s\n %s' % (name, size_to_str(var.size()))
+        return r'<%s <br/><br/> %s>' % (name, size_to_str(var.size()))
 
     def add_nodes(fn):
         assert not torch.is_tensor(fn)
