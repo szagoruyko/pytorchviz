@@ -138,6 +138,8 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
         # also note that this still works for custom autograd functions
         if hasattr(fn, 'saved_tensors'):
             for t in fn.saved_tensors:
+                if t is None:
+                    continue
                 seen.add(t)
                 dot.edge(str(id(t)), str(id(fn)), dir="none")
                 dot.node(str(id(t)), get_var_name(t), fillcolor='orange')
