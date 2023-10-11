@@ -138,22 +138,36 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
         # also note that this still works for custom autograd functions
         if hasattr(fn, 'saved_tensors'):
             for t in fn.saved_tensors:
-                seen.add(t)
-                dot.edge(str(id(t)), str(id(fn)), dir="none")
+                dot.edge(str(id(t)), str(id(fn)))
                 dot.node(str(id(t)), get_var_name(t), fillcolor='orange')
 
 
-    def add_base_tensor(var, color='darkolivegreen1'):
-        if var in seen:
-            return
-        seen.add(var)
-        dot.node(str(id(var)), get_var_name(var), fillcolor=color)
-        if (var.grad_fn):
-            add_nodes(var.grad_fn)
-            dot.edge(str(id(var.grad_fn)), str(id(var)))
-        if var._is_view():
-            add_base_tensor(var._base, color='darkolivegreen3')
-            dot.edge(str(id(var._base)), str(id(var)), style="dotted")
+    def add_base_tensor(var_list, color='darkolivegreen1'):
+        if isinstance(var_list, list):
+            for var in var_list:
+                if var in seen:
+                    continue
+                seen.add(var)
+                dot.node(str(id(var)), get_var_name(var), fillcolor=color)
+                if (var.grad_fn):
+                    add_nodes(var.grad_fn)
+                    dot.edge(str(id(var.grad_fn)), str(id(var)))
+                if var._is_view():
+                    add_base_tensor(var._base, color='darkolivegreen3')
+                    dot.edge(str(id(var._base)), str(id(var)), style="dotted")
+        else:
+            var = var_list
+            if var in seen:
+              return
+            seen.add(var)
+            dot.node(str(id(var)), get_var_name(var), fillcolor=color)
+            if (var.grad_fn):
+                add_nodes(var.grad_fn)
+                dot.edge(str(id(var.grad_fn)), str(id(var)))
+            if var._is_view():
+                add_base_tensor(var._base, color='darkolivegreen3')
+                dot.edge(str(id(var._base)), str(id(var)), style="dotted")
+                    
 
 
     # handle multiple outputs
