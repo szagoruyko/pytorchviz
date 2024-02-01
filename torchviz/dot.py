@@ -86,7 +86,7 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
     seen = set()
 
     def size_to_str(size):
-        return '(' + (', ').join(['%d' % v for v in size]) + ')'
+        return '(' + (', ').join([str(v) for v in size]) + ')'
 
     def get_var_name(var, name=None):
         if not name:
