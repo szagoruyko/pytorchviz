@@ -64,6 +64,7 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
             present, are always displayed. (Requires PyTorch version >= 1.9)
         max_attr_chars: if show_attrs is `True`, sets max number of characters
             to display for any given attribute.
+        display_var_set: Set(str), which attributes of the variable/tensor you want to show
     """
     if LooseVersion(torch.__version__) < LooseVersion("1.9") and \
             (show_attrs or show_saved):
