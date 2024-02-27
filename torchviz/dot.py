@@ -95,29 +95,30 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
     def get_var_name(var, name=None):
         if not name:
             name = param_map[id(var)] if id(var) in param_map else ''
-            attrs = dict()
-            for attr in dir(var):
-                if attr in display_var_set:
-                    val = getattr(var, attr)
-                    if isinstance(val, torch.Tensor):
-                        attrs[attr] = np.array2string(val.cpu().numpy(), max_line_width=max_attr_chars, threshold=max_attr_chars, precision=4)
-                    else:
-                        attrs[attr] = str(val)
-            col1width = max(len(k) for k in attrs.keys())
-            for attr, val in attrs.items():
-                res = []
-                if '\n' in val:
-                    vals = val.split('\n')
-                    res.append(vals[0])
-                    if len(vals)>1:
-                        res.extend([f'%-{col1width}s' % ''+ v for v in vals[1:]])
-                    attrs[attr] = '\n'.join(res)
-            col2width = min(max(len(str(v)) if '\n' not in str(v) else max(list(map(lambda x: len(x) + 1, v.split('\n')))) for v in attrs.values()), max_attr_chars)
-            sep = "-" * max(col1width + col2width + 2, len(name))
-            attrstr = '%' + str(col1width) + 's: %-' + str(col2width) + 's'
-            truncate = lambda s: s[:col2width - 3] + "..." if max(list(map(lambda x: len(x), s.split('\n')))) > col2width else s
-            p = '\n'.join(attrstr % (k, truncate(str(v))) for (k, v) in attrs.items())
-            return '%s\n %s' % (name, size_to_str(var.size())) + '\n' + sep + '\n' + p
+            if len(display_var_set)>0:
+                attrs = dict()
+                for attr in dir(var):
+                    if attr in display_var_set:
+                        val = getattr(var, attr)
+                        if isinstance(val, torch.Tensor):
+                            attrs[attr] = np.array2string(val.cpu().numpy(), max_line_width=max_attr_chars, threshold=max_attr_chars, precision=4)
+                        else:
+                            attrs[attr] = str(val)
+                col1width = max(len(k) for k in attrs.keys())
+                for attr, val in attrs.items():
+                    res = []
+                    if '\n' in val:
+                        vals = val.split('\n')
+                        res.append(vals[0])
+                        if len(vals)>1:
+                            res.extend([f'%-{col1width}s' % ''+ v for v in vals[1:]])
+                        attrs[attr] = '\n'.join(res)
+                col2width = min(max(len(str(v)) if '\n' not in str(v) else max(list(map(lambda x: len(x) + 1, v.split('\n')))) for v in attrs.values()), max_attr_chars)
+                sep = "-" * max(col1width + col2width + 2, len(name))
+                attrstr = '%' + str(col1width) + 's: %-' + str(col2width) + 's'
+                truncate = lambda s: s[:col2width - 3] + "..." if max(list(map(lambda x: len(x), s.split('\n')))) > col2width else s
+                p = '\n'.join(attrstr % (k, truncate(str(v))) for (k, v) in attrs.items())
+                return '%s\n %s' % (name, size_to_str(var.size())) + '\n' + sep + '\n' + p
         return '%s\n %s' % (name, size_to_str(var.size()))
 
     def add_nodes(fn):
