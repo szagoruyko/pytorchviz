@@ -1,5 +1,5 @@
 from collections import namedtuple
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from graphviz import Digraph
 import torch
 from torch.autograd import Variable
