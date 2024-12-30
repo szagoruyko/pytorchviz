@@ -1,5 +1,5 @@
 from collections import namedtuple
-from distutils.version import LooseVersion
+from packaging.version import Version
 from graphviz import Digraph
 import torch
 from torch.autograd import Variable
@@ -62,7 +62,7 @@ def make_dot(var, params=None, show_attrs=False, show_saved=False, max_attr_char
         max_attr_chars: if show_attrs is `True`, sets max number of characters
             to display for any given attribute.
     """
-    if LooseVersion(torch.__version__) < LooseVersion("1.9") and \
+    if Version(torch.__version__) < Version("1.9") and \
         (show_attrs or show_saved):
         warnings.warn(
             "make_dot: showing grad_fn attributes and saved variables"
