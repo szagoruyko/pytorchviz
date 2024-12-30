@@ -25,6 +25,7 @@ setup_info = dict(
     zip_safe=True,
 
     install_requires=[
+        'packaging',
         'torch',
         'graphviz'
     ]
